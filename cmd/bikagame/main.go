@@ -6,12 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	appbot "bikagame-go/internal/bot"
+	"bikagame-go/internal/bot"
 	"bikagame-go/internal/config"
 	"bikagame-go/internal/db"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	_ = godotenv.Load()
 	cfg := config.Load()
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -22,7 +24,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	app, err := appbot.New(ctx, cfg, dbc)
+	app, err := bot.New(ctx, cfg, dbc)
 	if err != nil {
 		log.Fatal(err)
 	}
