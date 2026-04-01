@@ -1,31 +1,32 @@
-# BIKA Game Bot — Go (Mongo-compatible starter)
+# BIKA Game Bot (Go)
 
-This project is a Go rewrite starter that keeps using the **same MongoDB database and collection names** as the old Python bot.
+Mongo-compatible Go version for the earlier Python bot.
 
-## Same Mongo layout
-- DB: `bika_slot`
-- collections:
-  - `users`
-  - `groups`
-  - `config`
-  - `transactions`
-  - `orders`
-
-## Included
-- `/start`
-- `/ping`
-- auto group approval request to owner DM
-- approve / reject callback buttons
-- `/pendinggroups`
-- `/groupstatus`
-- `.slot 100` with wallet / treasury flow
-
-## Important
-This is a structured starter. Depending on exact library versions, a few Telegram field names may need tiny compile-time adjustments.
+## Features included
+- /start
+- /ping
+- /status
+- /balance /bal .bal
+- /dailyclaim
+- /top10 .top10
+- /gift .gift
+- /pendinggroups
+- /groupstatus
+- /approve /reject
+- owner DM callback approve/reject
+- .slot
 
 ## Run
 ```bash
 cp .env.example .env
+# edit .env
+
 go mod tidy
-go run ./cmd/bikagame
+go build -o bikagame ./cmd/bikagame
+./bikagame
 ```
+
+## Mongo compatibility
+Uses the same database/collections as the Python bot:
+- DB: `bika_slot`
+- collections: `users`, `groups`, `config`, `transactions`, `orders`
