@@ -8,6 +8,7 @@ import (
 	"bikagame-go/internal/db"
 	"bikagame-go/internal/store"
 	tgbot "github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
 )
 
 type App struct {
@@ -17,7 +18,12 @@ type App struct {
 }
 
 func New(ctx context.Context, cfg config.Config, dbc *db.DB) (*App, error) {
-	b, err := tgbot.New(cfg.BotToken)
+	b, err := tgbot.New(cfg.BotToken, tgbot.WithDefaultHandler(func(ctx context.Context, b *tgbot.Bot, update *models.Update) {
+		if update.MyChatMember != nil {
+			app := &App{Bot: b, Cfg: cfg, DB: dbc}
+			app.handleMyChatMember(ctx, b, update)
+		}
+	}))
 	if err != nil {
 		return nil, err
 	}
@@ -28,13 +34,12 @@ func New(ctx context.Context, cfg config.Config, dbc *db.DB) (*App, error) {
 		DB:  dbc,
 	}
 
-	app.registerHandlers()
-
 	_, err = store.EnsureTreasury(ctx, dbc, cfg)
 	if err != nil {
 		return nil, err
 	}
 
+	app.registerHandlers()
 	return app, nil
 }
 
@@ -46,15 +51,27 @@ func (a *App) Start(ctx context.Context) {
 func (a *App) registerHandlers() {
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/start", tgbot.MatchTypePrefix, a.handleStart)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/ping", tgbot.MatchTypePrefix, a.handlePing)
+
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/status", tgbot.MatchTypePrefix, a.handleStatus)
+
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/balance", tgbot.MatchTypePrefix, a.handleBalance)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/bal", tgbot.MatchTypePrefix, a.handleBalance)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".bal", tgbot.MatchTypePrefix, a.handleBalance)
+
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/dailyclaim", tgbot.MatchTypePrefix, a.handleDailyClaim)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".dailyclaim", tgbot.MatchTypePrefix, a.handleDailyClaim)
+
+    a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/top10", tgbot.MatchTypePrefix, a.handleTop10)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".top10", tgbot.MatchTypePrefix, a.handleTop10)
+
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/gift", tgbot.MatchTypePrefix, a.handleGift)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".gift", tgbot.MatchTypePrefix, a.handleGift)
+	
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/pendinggroups", tgbot.MatchTypePrefix, a.handlePendingGroups)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/groupstatus", tgbot.MatchTypePrefix, a.handleGroupStatus)
+
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".slot", tgbot.MatchTypePrefix, a.handleSlot)
-	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".bal", tgbot.MatchTypePrefix, a.handleDotBal)
-    a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/bal", tgbot.MatchTypePrefix, a.handleDotBal)
+
 	a.Bot.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "groupapprove:", tgbot.MatchTypePrefix, a.handleApproveGroup)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "groupreject:", tgbot.MatchTypePrefix, a.handleRejectGroup)
 }
