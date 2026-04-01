@@ -96,4 +96,29 @@ func TopUsersByBalance(ctx context.Context, dbc *db.DB, limit int64) ([]models.U
 		}
 	}
 	return out, nil
+	
+	func GetUserByUsername(ctx context.Context, dbc *db.DB, username string) (*models.User, error) {
+	var user models.User
+	err := dbc.Users.FindOne(ctx, bson.M{"username": strings.ToLower(strings.TrimPrefix(username, "@"))}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func TransferBalance(ctx context.Context, dbc *db.DB, fromUserID, toUserID, amount int64) error {
+	if amount <= 0 {
+		return nil
+	}
+
+	ok, err := SubBalanceIfEnough(ctx, dbc, fromUserID, amount)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrUserInsufficient
+	}
+
+	return AddBalance(ctx, dbc, toUserID, amount)
+}
 }
