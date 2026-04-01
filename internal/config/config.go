@@ -39,12 +39,10 @@ func Load() Config {
 	if err != nil {
 		log.Fatalf("invalid OWNER_ID: %v", err)
 	}
-
 	startBonus, err := strconv.ParseInt(getEnv("START_BONUS", "30000"), 10, 64)
 	if err != nil {
 		startBonus = 30000
 	}
-
 	return Config{
 		BotToken:   mustEnv("BOT_TOKEN", ""),
 		MongoURI:   mustEnv("MONGODB_URI", ""),
