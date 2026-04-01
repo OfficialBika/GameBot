@@ -46,10 +46,15 @@ func (a *App) Start(ctx context.Context) {
 func (a *App) registerHandlers() {
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/start", tgbot.MatchTypePrefix, a.handleStart)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/ping", tgbot.MatchTypePrefix, a.handlePing)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/status", tgbot.MatchTypePrefix, a.handleStatus)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/balance", tgbot.MatchTypePrefix, a.handleBalance)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/dailyclaim", tgbot.MatchTypePrefix, a.handleDailyClaim)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".dailyclaim", tgbot.MatchTypePrefix, a.handleDailyClaim)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/pendinggroups", tgbot.MatchTypePrefix, a.handlePendingGroups)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/groupstatus", tgbot.MatchTypePrefix, a.handleGroupStatus)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".slot", tgbot.MatchTypePrefix, a.handleSlot)
+	a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, ".bal", tgbot.MatchTypePrefix, a.handleDotBal)
+    a.Bot.RegisterHandler(tgbot.HandlerTypeMessageText, "/bal", tgbot.MatchTypePrefix, a.handleDotBal)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "groupapprove:", tgbot.MatchTypePrefix, a.handleApproveGroup)
 	a.Bot.RegisterHandler(tgbot.HandlerTypeCallbackQueryData, "groupreject:", tgbot.MatchTypePrefix, a.handleRejectGroup)
-	a.Bot.RegisterHandler(tgbot.HandlerTypeMyChatMember, "", tgbot.MatchTypeContains, a.handleMyChatMember)
 }
