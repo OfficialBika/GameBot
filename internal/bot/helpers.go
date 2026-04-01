@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html"
 	"strings"
+	"time"
 
 	"bikagame-go/internal/models"
 )
@@ -63,4 +64,39 @@ func normalizeRTP(v float64) float64 {
 		return 0.98
 	}
 	return v
+}
+
+func yangonNow() time.Time {
+	loc, err := time.LoadLocation("Asia/Yangon")
+	if err != nil {
+		return time.Now()
+	}
+	return time.Now().In(loc)
+}
+
+func yangonDateKey() string {
+	return yangonNow().Format("2006-01-02")
+}
+
+func walletRank(balance int64) string {
+	switch {
+	case balance <= 0:
+		return "ဖင်ပြောင်ငမွဲ"
+	case balance <= 500:
+		return "ဆင်းရဲသား အိမ်ခြေမဲ့"
+	case balance <= 1000:
+		return "အိမ်ပိုင်ဝန်းပိုင် ဆင်းရဲသား"
+	case balance <= 5000:
+		return "လူလတ်တန်းစား"
+	case balance <= 10000:
+		return "သူဌေးပေါက်စ"
+	case balance <= 100000:
+		return "သိန်းကြွယ်သူဌေး"
+	case balance <= 1000000:
+		return "သန်းကြွယ်သူဌေးအကြီးစား"
+	case balance <= 50000000:
+		return "ကုဋေရှစ်ဆယ် သူဌေးကြီး"
+	default:
+		return "အာကာသသူဌေး"
+	}
 }
