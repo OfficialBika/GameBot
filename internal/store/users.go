@@ -71,3 +71,29 @@ func SubBalanceIfEnough(ctx context.Context, dbc *db.DB, userID int64, amount in
 	}
 	return res.ModifiedCount > 0, nil
 }
+func SetLastDailyClaimDate(ctx context.Context, dbc *db.DB, userID int64, dateKey string) error {
+	_, err := dbc.Users.UpdateOne(ctx, bson.M{"userId": userID}, bson.M{
+		"$set": bson.M{
+			"lastDailyClaimDate": dateKey,
+			"updatedAt":          time.Now(),
+		},
+	})
+	return err
+}
+
+func TopUsersByBalance(ctx context.Context, dbc *db.DB, limit int64) ([]models.User, error) {
+	cur, err := dbc.Users.Find(ctx, bson.M{}, options.Find().SetSort(bson.M{"balance": -1}).SetLimit(limit))
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(ctx)
+
+	out := make([]models.User, 0)
+	for cur.Next(ctx) {
+		var u models.User
+		if err := cur.Decode(&u); err == nil {
+			out = append(out, u)
+		}
+	}
+	return out, nil
+}
