@@ -13,8 +13,7 @@ import (
 
 func EnsureUser(ctx context.Context, dbc *db.DB, userID int64, username, firstName, lastName, fullName string) (*models.User, error) {
 	now := time.Now()
-	username = strings.ToLower(username)
-
+	username = strings.ToLower(strings.TrimPrefix(username, "@"))
 	update := bson.M{
 		"$set": bson.M{
 			"userId":    userID,
@@ -32,18 +31,25 @@ func EnsureUser(ctx context.Context, dbc *db.DB, userID int64, username, firstNa
 			"createdAt":         now,
 		},
 	}
-
 	_, err := dbc.Users.UpdateOne(ctx, bson.M{"userId": userID}, update, options.UpdateOne().SetUpsert(true))
 	if err != nil {
 		return nil, err
 	}
-
 	return GetUser(ctx, dbc, userID)
 }
 
 func GetUser(ctx context.Context, dbc *db.DB, userID int64) (*models.User, error) {
 	var user models.User
 	err := dbc.Users.FindOne(ctx, bson.M{"userId": userID}).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func GetUserByUsername(ctx context.Context, dbc *db.DB, username string) (*models.User, error) {
+	var user models.User
+	err := dbc.Users.FindOne(ctx, bson.M{"username": strings.ToLower(strings.TrimPrefix(username, "@"))}).Decode(&user)
 	if err != nil {
 		return nil, err
 	}
@@ -59,10 +65,7 @@ func AddBalance(ctx context.Context, dbc *db.DB, userID int64, amount int64) err
 }
 
 func SubBalanceIfEnough(ctx context.Context, dbc *db.DB, userID int64, amount int64) (bool, error) {
-	res, err := dbc.Users.UpdateOne(ctx, bson.M{
-		"userId":  userID,
-		"balance": bson.M{"$gte": amount},
-	}, bson.M{
+	res, err := dbc.Users.UpdateOne(ctx, bson.M{"userId": userID, "balance": bson.M{"$gte": amount}}, bson.M{
 		"$inc": bson.M{"balance": -amount},
 		"$set": bson.M{"updatedAt": time.Now()},
 	})
@@ -71,6 +74,21 @@ func SubBalanceIfEnough(ctx context.Context, dbc *db.DB, userID int64, amount in
 	}
 	return res.ModifiedCount > 0, nil
 }
+
+func TransferBalance(ctx context.Context, dbc *db.DB, fromUserID, toUserID, amount int64) error {
+	if amount <= 0 {
+		return nil
+	}
+	ok, err := SubBalanceIfEnough(ctx, dbc, fromUserID, amount)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return ErrUserInsufficient
+	}
+	return AddBalance(ctx, dbc, toUserID, amount)
+}
+
 func SetLastDailyClaimDate(ctx context.Context, dbc *db.DB, userID int64, dateKey string) error {
 	_, err := dbc.Users.UpdateOne(ctx, bson.M{"userId": userID}, bson.M{
 		"$set": bson.M{
@@ -96,29 +114,4 @@ func TopUsersByBalance(ctx context.Context, dbc *db.DB, limit int64) ([]models.U
 		}
 	}
 	return out, nil
-	
-	func GetUserByUsername(ctx context.Context, dbc *db.DB, username string) (*models.User, error) {
-	var user models.User
-	err := dbc.Users.FindOne(ctx, bson.M{"username": strings.ToLower(strings.TrimPrefix(username, "@"))}).Decode(&user)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
-func TransferBalance(ctx context.Context, dbc *db.DB, fromUserID, toUserID, amount int64) error {
-	if amount <= 0 {
-		return nil
-	}
-
-	ok, err := SubBalanceIfEnough(ctx, dbc, fromUserID, amount)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return ErrUserInsufficient
-	}
-
-	return AddBalance(ctx, dbc, toUserID, amount)
-}
 }
